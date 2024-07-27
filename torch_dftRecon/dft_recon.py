@@ -25,9 +25,7 @@ class ParallelbeamDFTReconLayer(nn.Module):
 
     def dft_recon(self, sgm: torch.tensor, N: int, a: float, FN: int, FM: int, M: int, V: int):
         ### 1. sgm-1D dft
-        R_k = torch.zeros((self.V, self.FN), dtype=torch.complex128).cuda()
-        for j in range(V):
-            R_k[j] = self.fft_trans(sgm[j, ...], a, N, FN)
+        R_k = self.fft_trans(sgm, a, N, FN)
 
         ### 1.1 sgm-1D dft filter, gaussianApodizedRamp freq domain
         if self.cfg.reconKernelEnum == KERNEL_GAUSSIAN_RAMP:
@@ -70,8 +68,8 @@ class ParallelbeamDFTReconLayer(nn.Module):
         delta_k = 1 / (FN * delta_x)
         x_0 = - (N-1) / 2 * delta_x
         k_0 = - (FN-1) / 2 * delta_k
-        m = torch.arange(N).to(torch.complex128).cuda()
-        n = torch.arange(FN).to(torch.complex128).cuda()
+        m = (torch.ones([self.V, N])*torch.arange(N)).to(torch.complex128).cuda()
+        n = (torch.ones([self.V, FN])*torch.arange(FN)).to(torch.complex128).cuda()
 
         gm = fm * torch.exp(-1j * 2 * torch.pi * k_0 * delta_x * m)
         gn = torch.fft.fft(gm, n=FN, norm='backward')
